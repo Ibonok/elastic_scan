@@ -137,13 +137,14 @@ Saved 1000 results into file elasticsearch.json.gz
 
 shodan parse --fields ip_str,port --separator : elasticsearch.json.gz | sed s'/.$//' > el_ip
 
-python3 elastic_scan.py -f el_ip -d -std
-python3 elastic_scan.py --ip xxx.xxx.xxx.xxx:80 -s -std
+cat el_ip
 
 file: el_ip
 xxx.xxx.xxx.xxx:80
 xxx.xxx.xxx.xxx:80
 xxx.xxx.xxx.xxx:80
 xxx.xxx.xxx.xxx:80
+
+python3 elastic_scan.py -f el_ip -d -out json -s 10
 
 ```

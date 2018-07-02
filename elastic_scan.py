@@ -226,7 +226,7 @@ def single_ip(ip):
         if es is not None:
             get_indexes ( es, ip)
     else:
-        print ('Error got next')
+        print ('Error go next')
 
 
 def input_file(filename):
