@@ -145,6 +145,6 @@ xxx.xxx.xxx.xxx:80
 xxx.xxx.xxx.xxx:80
 xxx.xxx.xxx.xxx:80
 
-python3 elastic_scan.py -f el_ip -d -out json -s 10
+python3 elastic_scan.py -f el_ip -d -o json -s 10
 
 ```
