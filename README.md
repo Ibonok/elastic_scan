@@ -36,7 +36,7 @@ optional arguments:
   -r [RETRIES], --retries [RETRIES]
                         Connection Retries, Default = 0
   -s [SIZE], --size [SIZE]
-                        Dump Entries, Default = 1
+                        Define Scroll Size, Default = 1
   -v [VERBOSE], --verbose [VERBOSE]
                         Increase verbosity level 0:INFO, 1:DEBUG, 2:WARNING,
                         3:ERROR, 4:CRITICAL
@@ -148,3 +148,9 @@ xxx.xxx.xxx.xxx:80
 python3 elastic_scan.py -f el_ip -d -o json -s 10
 
 ```
+
+# Roadmap
+
+1. Clean Code
+2. Searching Dump Results with Yara Rules
+3. etc.

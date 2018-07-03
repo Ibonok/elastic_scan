@@ -55,7 +55,7 @@ def check_args ():
 
     pars.add_argument('-t', '--timeout', nargs='?', type=int, default=30, help='Connection Timeout, Default = 30s')
     pars.add_argument('-r', '--retries', nargs='?', type=int, default=False, help='Connection Retries, Default = 0')
-    pars.add_argument('-s', '--size', nargs='?', type=int, default=1, help='Dump Entries, Default = 1')
+    pars.add_argument('-s', '--size', nargs='?', type=int, default=1, help='Define Scroll Size, Default = 1')
     pars.add_argument('-v', '--verbose', type=int, nargs='?', help='Increase verbosity level 0:INFO, 1:DEBUG, 2:WARNING, 3:ERROR, 4:CRITICAL', default=None)
     pars.add_argument('-i', '--indexes', type=str, nargs='*', help='Give known indexes : index1 index2 indexn, Default = *', default='*')
     pars.add_argument('-d', '--dump', type=bool, nargs='?', help='Dump indexes of target. Default = False', default=False, const=True)
