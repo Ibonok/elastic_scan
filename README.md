@@ -2,7 +2,7 @@
 > Dump Elasticsearch Instances
 
 The code is very dirty but works so far :-)
-
+Define an elasticsearch host and list all indexes and dump them to a file. 
 # Installation
 
 ```
