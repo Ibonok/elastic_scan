@@ -9,17 +9,16 @@
 # 
 ############ 
 
-from elasticsearch import Elasticsearch, ElasticsearchException, TransportError
+from elasticsearch import Elasticsearch, ElasticsearchException
 from colorama import init, Fore, Style
 from datetime import datetime
 
-import os, errno
+import yara
+import os, errno, sys, logging
 import argparse
 import jsbeautifier
 import urllib3
 import re
-import sys
-import logging
 import json
 
 def set_debug_level( level):
@@ -45,12 +44,12 @@ def check_args ():
     global CONNECTION_TIMEOUT
     global CONNECTION_RETRIES
     global SIZE
-    global SINGLE_IP
     global INDEXES
     global DUMP_INDEXES
     global OUTPUT
     global STDOUT
-    
+    global YARA
+
     pars = argparse.ArgumentParser(description=Fore.GREEN + Style.BRIGHT + 'Search for elasticsearch on the Internet. \nDisplay all Indexes and dump the Indexes.' + Style.RESET_ALL)
 
     pars.add_argument('-t', '--timeout', nargs='?', type=int, default=30, help='Connection Timeout, Default = 30s')
@@ -61,6 +60,7 @@ def check_args ():
     pars.add_argument('-d', '--dump', type=bool, nargs='?', help='Dump indexes of target. Default = False', default=False, const=True)
     pars.add_argument('-o', '--output', type=str, choices= ('csv', 'json'), help='Output File: ip-indexname, csv=only _source, json=all', default=None)
     pars.add_argument('-std', '--stdout', type=bool, nargs='?', help='Display DUMP to stdout, Default = False', default=False, const=True)
+    pars.add_argument('-y', '--yara', type=bool, nargs='?', help='Turn on yara rule search, Default = False', default=False, const=True)
 
     pars.add_argument('--ip', nargs='?', help='Target IP:PORT')
     pars.add_argument('-f', '--filename', nargs='?', help='File with IP:PORT')
@@ -74,6 +74,7 @@ def check_args ():
     DUMP_INDEXES = args.dump
     OUTPUT = args.output
     STDOUT = args.stdout
+    YARA = args.yara
     set_debug_level ( args.verbose)
 
     print_settings()
@@ -122,39 +123,55 @@ def dump_index ( es, this_index, ip):
         request_timeout = 10,
         body = {
     })
-    sid = page['_scroll_id'] 
-  
+    sid = page['_scroll_id']
+        
     #scroll_size = page['hits']['total']
     oth = True
 
     page = es.scroll(scroll_id = sid, scroll = '1m')
     if STDOUT and OUTPUT is None:
-        print (str(page))
+        if YARA:
+            rules = compile_yara()
+            check_yara_matches( rules, str(page))
+            print (str(page))
+        else:
+            print (str(page))
         #for hit in page['hits']['hits']:
         #    v = hit["_source"]
         #    data = json.dumps(v)
         #    print (jsbeautifier.beautify(data))
     elif OUTPUT == 'csv':
-        print (Fore.RED + 'Output to CSV IP/filename: ' + Fore.BLUE + ip + Fore.GREEN + '/' + this_index + '.csv')
+        print (Fore.RED + 'Output to CSV IP/filename: out/' + Fore.BLUE + ip + Fore.GREEN + '/' + this_index + '.csv')
         for hit in page['hits']['hits']:
             v = hit["_source"]
             data = json.dumps(v)
             data = json.loads(data)
-            oth = write_csv(data, this_index, ip, oth)
+            if YARA:
+                rules = compile_yara()
+                if check_yara_matches( rules, str(data)):
+                    oth = write_csv(data, this_index, ip, oth)
+            else:
+                oth = write_csv(data, this_index, ip, oth)
     elif OUTPUT == 'json':
-        print (Fore.RED + 'Output to IP/JSON filename: ' + Fore.BLUE + ip + Fore.GREEN + '/' + this_index + '.json')
-        write_json(page, this_index, ip)
+        print (Fore.RED + 'Output to IP/JSON filename: out/' + Fore.BLUE + ip + Fore.GREEN + '/' + this_index + '.json')
+        if YARA:
+            rules = compile_yara()
+            if check_yara_matches( rules, str(page)):
+                write_json(page, this_index, ip)
+        else:
+            write_json(page, this_index, ip)
 
 def write_json(data, this_index, ip):
     try: 
-        os.makedirs(ip)
+        os.makedirs('out')
+        os.makedirs('out/' + ip)
     except OSError as e:
         if e.errno != errno.EEXIST:
             print (Fore.RED + 'Cannot create directory')
             raise
     
     try: 
-        datei = open(ip + '/' + this_index + '.json', 'a')
+        datei = open('out/' + ip + '/' + this_index + '.json', 'a')
         datei.write(jsbeautifier.beautify(str(data)))
         datei.close()
     except FileNotFoundError:
@@ -162,14 +179,15 @@ def write_json(data, this_index, ip):
 
 def write_csv(data, this_index, ip, oth):
     try: 
-        os.makedirs(ip)
+        os.makedirs('out')
+        os.makedirs('out/' + ip)
     except OSError as e:
         if e.errno != errno.EEXIST:
             print (Fore.RED + 'Cannot create directory')
             raise
 
     try:
-        datei = open(ip + '/' + this_index + '.csv', 'a')
+        datei = open('out/' + ip + '/' + this_index + '.csv', 'a')
         headers = ''
         values = ''
         for key, value in data.items():
@@ -178,7 +196,7 @@ def write_csv(data, this_index, ip, oth):
         if SIZE > 1 and oth:
             oth = False
             datei.write(headers[:-1] + '\n')
-        datei.write(values[:-1] + '\n')
+        datei.write(values[:-1])
         datei.close()
         return oth
     except FileNotFoundError:
@@ -190,7 +208,6 @@ def check_ipport(ip):
     else:
         print ('Not an ip:port, ', ip)
         return False
-        
 
 def test4elastic(ip):
     if check_ipport(ip):
@@ -221,7 +238,6 @@ def create_connection(ip):
     else:
         return es
 
-
 def single_ip(ip):
     if test4elastic(ip):
         es = create_connection(ip)
@@ -229,7 +245,6 @@ def single_ip(ip):
             get_indexes ( es, ip)
     else:
         print ('Error go next')
-
 
 def input_file(filename):
     file = open (filename, 'r')
@@ -241,12 +256,52 @@ def input_file(filename):
         else:
             print ('Error go next')
 
+def compile_yara():
+    try:
+        indexes = 'Rules/index.yar'
+        rules = yara.compile(indexes)
+        return rules
+    except Exception as e:
+        print ('Error create yara index: ', e)
+        sys.exit()
 
-try:
-    (value, typ) = check_args()
-    if typ:
-        single_ip(value)
-    else:
-        input_file(value)
-except KeyboardInterrupt:
-    sys.exit()
+def yara_index( indexes):
+    with open (indexes, 'w') as yara_rules:
+        for filename in os.listdir('Rules'):
+            if filename.endswith('.yar') and filename != 'index.yar':
+                include = 'include "{0}"\n'.format(filename)
+                yara_rules.write(include)
+
+def check_yara_matches( rules, json_data):
+    matches = ""
+    try:
+        matches = rules.match(data=json_data)
+    except Exception as e:
+        print ('Cannot check json_data: ', e)
+        print ('Go next')
+    
+    results = []
+    for match in matches:
+        if match.rule == 'core_keywords' or match.rule == 'custom_keywords':
+            for s in match.strings:
+                rule_match = s[1].lstrip('$')
+                if rule_match not in results:
+                    results.append(rule_match)
+                results.append(str(match.rule))
+        else:
+            results.append(match.rule)
+
+    if len (results) > 0:
+        print ('Rule Match: ', results)
+        return True
+        #print (json_data)
+
+if __name__ == "__main__":
+    try:
+        (value, typ) = check_args()
+        if typ:
+            single_ip(value)
+        else:
+            input_file(value)
+    except KeyboardInterrupt:
+        sys.exit()

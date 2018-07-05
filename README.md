@@ -2,7 +2,8 @@
 > Dump Elasticsearch Instances
 
 The code is very dirty but works so far :-)
-Define an elasticsearch host and list all indexes and dump them to a file. 
+Define an elasticsearch host and list all indexes and dump them to a file.
+You can write some yara rules to search intressting entries.
 # Installation
 
 ```
@@ -20,11 +21,12 @@ pip3 install -r requirements.txt
 # Usage
 
 ```
-python3 elastic_scan.py
+python elastic_scan.py --help
 
-usage: elastic.py [-h] [-t [TIMEOUT]] [-r [RETRIES]] [-s [SIZE]]
-                  [-v [VERBOSE]] [-i [INDEXES [INDEXES ...]]] [-d [DUMP]]
-                  [-o {csv,json}] [-std [STDOUT]] [--ip [IP]] [-f [FILENAME]]
+usage: elastic_scan.py [-h] [-t [TIMEOUT]] [-r [RETRIES]] [-s [SIZE]]
+                       [-v [VERBOSE]] [-i [INDEXES [INDEXES ...]]] [-d [DUMP]]
+                       [-o {csv,json}] [-std [STDOUT]] [-y [YARA]] [--ip [IP]]
+                       [-f [FILENAME]]
 
 Search for elasticsearch on the Internet. Display all Indexes and
 dump the Indexes.
@@ -47,7 +49,9 @@ optional arguments:
   -o {csv,json}, --output {csv,json}
                         Output File: ip-indexname, csv=only _source, json=all
   -std [STDOUT], --stdout [STDOUT]
-                        Display DUMP to stdout, Default = True
+                        Display DUMP to stdout, Default = False
+  -y [YARA], --yara [YARA]
+                        Turn on yara rule search, Default = False
   --ip [IP]             Target IP:PORT
   -f [FILENAME], --filename [FILENAME]
                         File with IP:PORT
@@ -149,8 +153,18 @@ python3 elastic_scan.py -f el_ip -d -o json -s 10
 
 ```
 
+> Write your yara Rules
+
+```
+ls Rules/
+
+index.yar  somestring.yar
+```
+
+If you create your own rule file you need to at in index.yar
+
 # Roadmap
 
-1. Clean Code
-2. Searching Dump Results with Yara Rules
-3. etc.
+- [ ] Clean code
+- [x] Searching Dump Results with Yara Rules 
+- [ ] etc.
