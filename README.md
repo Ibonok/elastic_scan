@@ -47,7 +47,7 @@ optional arguments:
   -d [DUMP], --dump [DUMP]
                         Dump indexes of target. Default = False
   -o {csv,json}, --output {csv,json}
-                        Output File: ip-indexname, csv=only _source, json=all
+                        Output File: out/ip/indexname, csv=only _source, json=all
   -std [STDOUT], --stdout [STDOUT]
                         Display DUMP to stdout, Default = False
   -y [YARA], --yara [YARA]

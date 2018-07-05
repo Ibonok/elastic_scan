@@ -58,7 +58,7 @@ def check_args ():
     pars.add_argument('-v', '--verbose', type=int, nargs='?', help='Increase verbosity level 0:INFO, 1:DEBUG, 2:WARNING, 3:ERROR, 4:CRITICAL', default=None)
     pars.add_argument('-i', '--indexes', type=str, nargs='*', help='Give known indexes : index1 index2 indexn, Default = *', default='*')
     pars.add_argument('-d', '--dump', type=bool, nargs='?', help='Dump indexes of target. Default = False', default=False, const=True)
-    pars.add_argument('-o', '--output', type=str, choices= ('csv', 'json'), help='Output File: ip-indexname, csv=only _source, json=all', default=None)
+    pars.add_argument('-o', '--output', type=str, choices= ('csv', 'json'), help='Output File: out/ip/indexname, csv=only _source, json=all', default=None)
     pars.add_argument('-std', '--stdout', type=bool, nargs='?', help='Display DUMP to stdout, Default = False', default=False, const=True)
     pars.add_argument('-y', '--yara', type=bool, nargs='?', help='Turn on yara rule search, Default = False', default=False, const=True)
 
