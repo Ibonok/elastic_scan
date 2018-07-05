@@ -165,6 +165,6 @@ If you create your own rule file you need to at in index.yar
 
 # Roadmap
 
-- [ ] Clean code
-- [x] Searching Dump Results with Yara Rules 
-- [ ] etc.
+:white_large_square:  Clean code
+:white_check_mark:  Searching Dump Results with Yara Rules 
+:white_large_square:  etc.
