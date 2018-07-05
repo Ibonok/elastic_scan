@@ -50,7 +50,7 @@ def check_args ():
     global DUMP_INDEXES
     global OUTPUT
     global STDOUT
-
+    
     pars = argparse.ArgumentParser(description=Fore.GREEN + Style.BRIGHT + 'Search for elasticsearch on the Internet. \nDisplay all Indexes and dump the Indexes.' + Style.RESET_ALL)
 
     pars.add_argument('-t', '--timeout', nargs='?', type=int, default=30, help='Connection Timeout, Default = 30s')
@@ -110,7 +110,7 @@ def get_indexes ( es, ip):
         print ('\n')
     except ElasticsearchException as e:
         print ('Error: ', e)
-    except TransportError as e:
+    except Exception as e:
         print ('Error: ', e)
 
 def dump_index ( es, this_index, ip):
@@ -122,10 +122,11 @@ def dump_index ( es, this_index, ip):
         request_timeout = 10,
         body = {
     })
-    sid = page['_scroll_id']
-
+    sid = page['_scroll_id'] 
+  
     #scroll_size = page['hits']['total']
     oth = True
+
     page = es.scroll(scroll_id = sid, scroll = '1m')
     if STDOUT and OUTPUT is None:
         print (str(page))
@@ -139,7 +140,7 @@ def dump_index ( es, this_index, ip):
             v = hit["_source"]
             data = json.dumps(v)
             data = json.loads(data)
-            write_csv(data, this_index, ip, oth)
+            oth = write_csv(data, this_index, ip, oth)
     elif OUTPUT == 'json':
         print (Fore.RED + 'Output to IP/JSON filename: ' + Fore.BLUE + ip + Fore.GREEN + '/' + this_index + '.json')
         write_json(page, this_index, ip)
@@ -177,8 +178,9 @@ def write_csv(data, this_index, ip, oth):
         if SIZE > 1 and oth:
             oth = False
             datei.write(headers[:-1] + '\n')
-        datei.write(values[:-1])
+        datei.write(values[:-1] + '\n')
         datei.close()
+        return oth
     except FileNotFoundError:
         print(Fore.RED + 'Input file not found!')
 
