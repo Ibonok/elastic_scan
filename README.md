@@ -1,9 +1,9 @@
 # elastic_scan
 > Dump Elasticsearch Instances
 
-The code is very dirty but works so far :-)
-Define an elasticsearch host and list all indexes and dump them to a file.
-You can write some yara rules to search intressting entries.
+The code is very dirty but works so far :-)  
+Define an elasticsearch host and list all indexes and dump them to a file.  
+You can write some yara rules to search intressting entries.  
 # Installation
 
 ```
@@ -165,6 +165,6 @@ If you create your own rule file you need to at in index.yar
 
 # Roadmap
 
-:white_large_square:  Clean code
-:white_check_mark:  Searching Dump Results with Yara Rules 
-:white_large_square:  etc.
+:white_large_square:  Clean code  
+:white_check_mark:  Searching Dump Results with Yara Rules   
+:white_large_square:  etc.  
