@@ -163,7 +163,8 @@ def dump_index ( es, this_index, ip):
 
 def write_json(data, this_index, ip):
     try: 
-        os.makedirs('out')
+        if os.path.exists("out") == false:
+            os.makedirs('out')
         os.makedirs('out/' + ip)
     except OSError as e:
         if e.errno != errno.EEXIST:
