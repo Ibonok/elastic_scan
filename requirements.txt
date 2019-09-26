@@ -2,4 +2,4 @@ urllib3==1.23
 jsbeautifier==1.7.4
 colorama==0.3.9
 elasticsearch==6.0.0
-python-yara==3.8.1
+yara-python==3.10.0
