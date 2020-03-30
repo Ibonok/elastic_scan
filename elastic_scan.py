@@ -18,6 +18,10 @@ import os, errno, sys, logging
 import argparse
 import jsbeautifier
 import urllib3
+import httplib2
+
+urllib3.disable_warnings()
+
 import re
 import json
 
@@ -211,17 +215,36 @@ def check_ipport(ip):
         print ('Not an ip:port, ', ip)
         return False
 
+def check_for_https(url, port):
+    print (url)
+    print (port)
+    conn = httplib2.HTTPConnectionWithTimeout(url, int(port), timeout=CONNECTION_TIMEOUT)
+    conn.request("HEAD", "/")
+    if conn.getresponse():
+        return False
+    else:
+        return True
+
 def test4elastic(ip):
     if check_ipport(ip):
         ipport = ip.split(':')
-        try:
-            http = urllib3.PoolManager(timeout=CONNECTION_TIMEOUT, retries=CONNECTION_RETRIES, port=int(ipport[1]))
-            check_el = http.request('GET', 'http://' + ip.rstrip())
-            if re.search (r'lucene', str(check_el.data)):
-                return True
+        try:    
+            if check_for_https(ipport[0], ipport[1]):
+                https = urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False, timeout=CONNECTION_TIMEOUT, retries=CONNECTION_RETRIES, port=int(ipport[1]))
+                check_el_https = https.request('GET', 'https://' + ip.rstrip())
+                if re.search (r'lucene', str(check_el_https.data)):
+                    return True
+                else:
+                    print ('Not an Elastic Search Instanz')
+                    return False
             else:
-                print ('Not an Elastic Search Instanz')
-                return False
+                http = urllib3.PoolManager(timeout=CONNECTION_TIMEOUT, retries=CONNECTION_RETRIES, port=int(ipport[1]))
+                check_el_http = http.request('GET', 'http://' + ip.rstrip())
+                if re.search (r'lucene', str(check_el_http.data)):
+                        return True
+                else:
+                    print ('Not an Elastic Search Instanz')
+                    return False
         except urllib3.exceptions.ConnectTimeoutError:
             print (Fore.RED + Style.BRIGHT + 'Error: Connection Timeout')
             return False
