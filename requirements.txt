@@ -5,3 +5,4 @@ elasticsearch==6.4.0
 jsbeautifier==1.10.2
 colorama==0.4.3
 yara==1.7.7
+certifi==2019.11.28
