@@ -1,7 +1,6 @@
-urllib3==1.25.8
 yara_python==3.11.0
-httplib2==0.17.0
-elasticsearch==6.4.0
+elasticsearch==7.6.0
 jsbeautifier==1.10.2
+urllib3==1.25.8
 colorama==0.4.3
 yara==1.7.7

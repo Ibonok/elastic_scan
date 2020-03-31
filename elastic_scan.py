@@ -14,11 +14,10 @@ from colorama import init, Fore, Style
 from datetime import datetime
 
 import yara
-import os, errno, sys, logging
+import os, errno, sys, logging, ssl, socket
 import argparse
 import jsbeautifier
 import urllib3
-import httplib2
 
 urllib3.disable_warnings()
 
@@ -53,7 +52,8 @@ def check_args ():
     global OUTPUT
     global STDOUT
     global YARA
-
+    global HTTPS
+    
     pars = argparse.ArgumentParser(description=Fore.GREEN + Style.BRIGHT + 'Search for elasticsearch on the Internet. \nDisplay all Indexes and dump the Indexes.' + Style.RESET_ALL)
 
     pars.add_argument('-t', '--timeout', nargs='?', type=int, default=30, help='Connection Timeout, Default = 30s')
@@ -215,23 +215,26 @@ def check_ipport(ip):
         print ('Not an ip:port, ', ip)
         return False
 
-def check_for_https(url, port):
-    print (url)
-    print (port)
-    conn = httplib2.HTTPConnectionWithTimeout(url, int(port), timeout=CONNECTION_TIMEOUT)
-    conn.request("HEAD", "/")
-    if conn.getresponse():
+def check_for_https(ip, port):
+    sock = socket.socket()
+    sock.connect((ip, int(port)))
+    try:
+        if ssl.wrap_socket(sock, cert_reqs=ssl.CERT_NONE) != None:
+            sock.close()
+            return True
+    except ssl.SSLError:
+        sock.close()
         return False
-    else:
-        return True
-
+        
 def test4elastic(ip):
+    global HTTPS
     if check_ipport(ip):
         ipport = ip.split(':')
         try:    
             if check_for_https(ipport[0], ipport[1]):
                 https = urllib3.PoolManager(cert_reqs='CERT_NONE', assert_hostname=False, timeout=CONNECTION_TIMEOUT, retries=CONNECTION_RETRIES, port=int(ipport[1]))
                 check_el_https = https.request('GET', 'https://' + ip.rstrip())
+                HTTPS = True
                 if re.search (r'lucene', str(check_el_https.data)):
                     return True
                 else:
@@ -240,6 +243,7 @@ def test4elastic(ip):
             else:
                 http = urllib3.PoolManager(timeout=CONNECTION_TIMEOUT, retries=CONNECTION_RETRIES, port=int(ipport[1]))
                 check_el_http = http.request('GET', 'http://' + ip.rstrip())
+                HTTPS = False
                 if re.search (r'lucene', str(check_el_http.data)):
                         return True
                 else:
@@ -254,7 +258,14 @@ def test4elastic(ip):
 
 def create_connection(ip):
     print (Fore.GREEN + 'Connect to ', ip)
-    es = Elasticsearch([ip])
+    if HTTPS:
+        context = ssl.SSLContext()
+        context.verify_mode = ssl.CERT_NONE
+        context.check_hostname = False
+        print ('SSL - Connection')
+        es = Elasticsearch(['https://' + ip], ssl_context=context)
+    else:
+        es = Elasticsearch([ip])
     version = es.info()
     print (Fore.BLUE + 'Name: ' + version['name'] + '\nClustername: ' + version['cluster_name'] + '\nLucene Version: ' + version['version']['lucene_version'])
     if version['version']['lucene_version'].startswith('4'):
